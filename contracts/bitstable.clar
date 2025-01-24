@@ -226,3 +226,50 @@
         (ok true)
     )
 )
+
+(define-public (set-liquidation-ratio (new-ratio uint))
+    (begin
+        (asserts! (is-eq tx-sender contract-owner) err-owner-only)
+        (asserts! (is-valid-ratio new-ratio) err-invalid-parameter)
+        (asserts! (< new-ratio (var-get minimum-collateral-ratio)) err-invalid-parameter)
+        (var-set liquidation-ratio new-ratio)
+        (ok true)
+    )
+)
+
+(define-public (set-stability-fee (new-fee uint))
+    (begin
+        (asserts! (is-eq tx-sender contract-owner) err-owner-only)
+        (asserts! (is-valid-fee new-fee) err-invalid-parameter)
+        (var-set stability-fee new-fee)
+        (ok true)
+    )
+)
+
+;; Public Functions - Access Control
+(define-public (add-liquidator (liquidator principal))
+    (begin
+        (asserts! (is-eq tx-sender contract-owner) err-owner-only)
+        (asserts! (not (is-authorized-liquidator liquidator)) err-invalid-parameter)
+        (map-set liquidators liquidator true)
+        (ok true)
+    )
+)
+
+(define-public (remove-liquidator (liquidator principal))
+    (begin
+        (asserts! (is-eq tx-sender contract-owner) err-owner-only)
+        (asserts! (is-authorized-liquidator liquidator) err-invalid-parameter)
+        (map-delete liquidators liquidator)
+        (ok true)
+    )
+)
+
+(define-public (add-oracle (oracle principal))
+    (begin
+        (asserts! (is-eq tx-sender contract-owner) err-owner-only)
+        (asserts! (not (is-authorized-oracle oracle)) err-invalid-parameter)
+        (map-set price-oracles oracle true)
+        (ok true)
+    )
+)
