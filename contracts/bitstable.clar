@@ -178,3 +178,51 @@
         (ok true)
     ))
 )
+
+;; Public Functions - Liquidation
+(define-public (liquidate (vault-owner principal))
+    (let (
+        (vault (unwrap! (map-get? vaults vault-owner) err-low-balance))
+        (collateral (get collateral vault))
+        (debt (get debt vault))
+        (collateral-value (* collateral (var-get last-price)))
+    )
+    (begin
+        (asserts! (var-get initialized) err-not-initialized)
+        (asserts! (var-get price-valid) err-invalid-price)
+        (asserts! (is-authorized-liquidator tx-sender) err-owner-only)
+        (asserts! (> debt u0) err-invalid-parameter)
+        (asserts! (< (* collateral-value u100)
+            (* debt (var-get liquidation-ratio)))
+            err-insufficient-collateral)
+        (let (
+            (collateral-to-transfer collateral)
+        )
+            (map-delete vaults vault-owner)
+            (try! (as-contract (stx-transfer? collateral-to-transfer (as-contract tx-sender) tx-sender)))
+            (ok true)
+        )
+    ))
+)
+
+;; Public Functions - Oracle Management
+(define-public (update-price (new-price uint))
+    (begin
+        (asserts! (is-authorized-oracle tx-sender) err-owner-only)
+        (asserts! (is-valid-price new-price) err-invalid-parameter)
+        (var-set last-price new-price)
+        (var-set price-valid true)
+        (ok true)
+    )
+)
+
+;; Public Functions - Governance
+(define-public (set-minimum-collateral-ratio (new-ratio uint))
+    (begin
+        (asserts! (is-eq tx-sender contract-owner) err-owner-only)
+        (asserts! (is-valid-ratio new-ratio) err-invalid-parameter)
+        (asserts! (> new-ratio (var-get liquidation-ratio)) err-invalid-parameter)
+        (var-set minimum-collateral-ratio new-ratio)
+        (ok true)
+    )
+)
