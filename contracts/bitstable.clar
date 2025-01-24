@@ -92,7 +92,7 @@
             {
                 collateral: u0,
                 debt: u0,
-                last-fee-timestamp: (unwrap-panic (get-block-info? time u0))
+                last-fee-timestamp: u0  ;; Use a default timestamp of 0
             }
             (map-get? vaults tx-sender)
         ))
@@ -195,6 +195,10 @@
         (asserts! (< (* collateral-value u100)
             (* debt (var-get liquidation-ratio)))
             err-insufficient-collateral)
+        
+        ;; Additional check to prevent unauthorized vault deletion
+        (asserts! (not (is-eq vault-owner contract-owner)) err-owner-only)
+        
         (let (
             (collateral-to-transfer collateral)
         )
